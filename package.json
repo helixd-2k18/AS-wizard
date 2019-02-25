@@ -1,0 +1,32 @@
+{
+  "name": "wizard",
+  "version": "1.0.0",
+  "description": "AssemblyScript wizarding",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc index.ts --inlineSourceMap --allowJs",
+    "watch": "tsc index.ts --inlineSourceMap --allowJs --watch",
+    "start": "ts-node index.ts",
+    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate --debug    --enable mutable-global --enable simd",
+    "asbuild:optimized": "asc assembly/index.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate --optimize --enable mutable-global --enable simd",
+    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
+  },
+  "keywords": [
+    "script",
+    "webassembly",
+    "wizard"
+  ],
+  "author": "elviras9t",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^10.12.27",
+    "ts-node": "^8.0.2",
+    "typescript": "^3.3.3333"
+  },
+  "dependencies": {
+    "@types/webassembly-js-api": "0.0.2",
+    "@types/webassembly-web-api": "0.0.1",
+    "node-fetch": "^2.3.0"
+  }
+}
