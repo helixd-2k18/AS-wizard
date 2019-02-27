@@ -1,47 +1,46 @@
 // The entry file of your WebAssembly module.
 import "allocator/buddy";
 
-// struct interface with method pointers
-class simetype<T,B> {
-  add: (a: T, b: T) => T;
-  get: (a: T) => B;
-  splat: (a: B) => T;
+// use v128 for wrapping
+class v128_wrap<B> {
+  constructor(protected a: v128){  };
+
+  //@inline public splat(a: B): v128_wrap<B> { return new v128_wrap<B>(v128.splat<B>(a)); };
+  @inline public splat(a: B): v128_wrap<B> { this.a = v128.splat<B>(a); return this; };
+  
+  // typed constructors
+  @inline public f32x4(a: f32, b: f32, c: f32, d: f32): v128_wrap<B> { this.a = f32x4(a,b,c,d); return this;} ;
+
+  // getters
+  @inline public get(): v128 { return this.a; };
+  @inline public extract_lane(a: u8): B { return v128.extract_lane<B>(this.a, a); };
+
+  // assign operators
+  @inline public set(a: v128): v128_wrap<B> { this.a = a; return this; };
+  @inline public assign(a: v128_wrap<B>): v128_wrap<B> { this.a = a.get(); return this; };
+
+  // binary operators
+  @inline @operator('+')
+  public add(b: v128_wrap<B>): v128_wrap<B> { return new v128_wrap<B>(v128.add<B>(this.get(),b.get())); };
+  
+  // shuffle
+  @inline shuffle(...lanes: u8[]): v128_wrap<B> { return new v128_wrap<B>(v128.shuffle<B>(this.a,lanes)); };
+
+  // get pointer
+  @inline public ptr(): v128_wrap<B> { return this; };
 };
 
-// function table 
-function f32x4_add(a: f32, b: f32): f32 { return a + b; };
-function f32x4_get(a: f32): f32 { return a; };
-function f32x4_splat(a: f32): f32 { return a; };
+let result: f32 = 0.0;
+function rise_result(): f32{
+  return result;
+}
 
-// use pointer to original functions
-let f32x4_t: simetype<f32,f32> = {
-  add: f32x4_add,
-  get: f32x4_get,
-  splat: f32x4_splat
-};
+let a = new v128_wrap<f32>(v128.splat<f32>(0.0));
+let b = new v128_wrap<f32>(v128.splat<f32>(0.0));
+let c = a.add(b);
+result = c.extract_lane(0);
 
-// imported function for logging
-class simd_wrap<T,B> {
-  constructor(protected a: T, protected M: simetype<T,B>){ };
-  @inline public splat(a: B, c: simd_wrap<T,B>): simd_wrap<T,B> { return c.set(this.M.splat(a)); };
-  @inline public get(): T{ return this.a; };
-  @inline public set(a: T): simd_wrap<T,B> { this.a = a; return this; };
-  @inline public add(b: simd_wrap<T,B>, c: simd_wrap<T,B>): simd_wrap<T,B> { return c.set(this.M.add(this.get(),b.get())); };
-  @inline public ptr(): simd_wrap<T,B> { return this; };
-};
+// 
+export class f32x4_t extends v128_wrap<f32>{};
 
-function get_f32x4_opset(): simetype<f32,f32> {return f32x4_t;};
-
-class f128_wrap extends simd_wrap<f32,f32>{};
-export {f128_wrap, get_f32x4_opset};
-
-/*
-// create constructor by template (zero argument, type methods)
-let f32x4_wrap = new simd_wrap<f32,f32>(0, f32x4_t);
-
-// splat constructor wrap 
-function f32x4_wrap_splat(a: f32): simd_wrap<f32,f32> { return f32x4_wrap.splat(a); }
-
-// should be possible to export as WebAssembly module function (constructor)
-export {f32x4_wrap_splat};
-*/
+export {rise_result};
